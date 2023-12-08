@@ -114,12 +114,12 @@ type: application
 # This is the chart version. This version number should be incremented each time you make changes
 # to the chart and its templates, including the app version.
 # Versions are expected to follow Semantic Versioning (https://semver.org/)
-version: 0.1.0
+version: %s
 # This is the version number of the application being deployed. This version number should be
 # incremented each time you make changes to the application. Versions are not expected to
 # follow Semantic Versioning. They should reflect the version the application is using.
 # It is recommended to use it with quotes.
-appVersion: "0.1.0"
+appVersion: "%s"
 `
 
 const certManagerDependencies = `
@@ -136,7 +136,7 @@ var chartName = regexp.MustCompile("^[a-zA-Z0-9._-]+$")
 const maxChartNameLength = 250
 
 // initChartDir - creates Helm chart structure in chartName directory if not presented.
-func initChartDir(chartDir, chartName string, crd bool, certManagerAsSubchart bool, certManagerVersion string) error {
+func initChartDir(chartDir, chartName, ChartVersion string, crd bool, certManagerAsSubchart bool, certManagerVersion string) error {
 	if err := validateChartName(chartName); err != nil {
 		return err
 	}
@@ -144,7 +144,7 @@ func initChartDir(chartDir, chartName string, crd bool, certManagerAsSubchart bo
 	cDir := filepath.Join(chartDir, chartName)
 	_, err := os.Stat(filepath.Join(cDir, "Chart.yaml"))
 	if os.IsNotExist(err) {
-		return createCommonFiles(chartDir, chartName, crd, certManagerAsSubchart, certManagerVersion)
+		return createCommonFiles(chartDir, chartName, ChartVersion, crd, certManagerAsSubchart, certManagerVersion)
 	}
 	logrus.Info("Skip creating Chart skeleton: Chart.yaml already exists.")
 	return err
@@ -160,7 +160,7 @@ func validateChartName(name string) error {
 	return nil
 }
 
-func createCommonFiles(chartDir, chartName string, crd bool, certManagerAsSubchart bool, certManagerVersion string) error {
+func createCommonFiles(chartDir, chartName, ChartVersion string, crd bool, certManagerAsSubchart bool, certManagerVersion string) error {
 	cDir := filepath.Join(chartDir, chartName)
 	err := os.MkdirAll(filepath.Join(cDir, "templates"), 0750)
 	if err != nil {
@@ -182,18 +182,19 @@ func createCommonFiles(chartDir, chartName string, crd bool, certManagerAsSubcha
 			logrus.WithField("file", file).Info("created")
 		}
 	}
-	createFile(chartYAML(chartName, certManagerAsSubchart, certManagerVersion), cDir, "Chart.yaml")
+	//createFile(chartYAML(chartName, certManagerAsSubchart, certManagerVersion), cDir, "Chart.yaml")
+	createFile(chartYAML(chartName, ChartVersion, certManagerAsSubchart, certManagerVersion), cDir, "Chart.yaml")
 	createFile([]byte(helmIgnore), cDir, ".helmignore")
 	createFile(helpersYAML(chartName), cDir, "templates", "_helpers.tpl")
 	return err
 }
 
-func chartYAML(appName string, certManagerAsSubchart bool, certManagerVersion string) []byte {
+func chartYAML(appName string, chartVersion string, certManagerAsSubchart bool, certManagerVersion string) []byte {
 	chartFile := defaultChartfile
 	if certManagerAsSubchart {
 		chartFile += fmt.Sprintf(certManagerDependencies, certManagerVersion)
 	}
-	return []byte(fmt.Sprintf(chartFile, appName))
+	return []byte(fmt.Sprintf(chartFile, appName, chartVersion, chartVersion))
 }
 
 func helpersYAML(chartName string) []byte {

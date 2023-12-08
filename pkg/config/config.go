@@ -34,6 +34,8 @@ type Config struct {
 	Files []string
 	// FilesRecursively read Files recursively
 	FilesRecursively bool
+	// Chart appVersion
+	ChartVersion string
 }
 
 func (c *Config) Validate() error {
